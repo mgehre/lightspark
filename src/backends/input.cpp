@@ -176,7 +176,9 @@ void InputThread::handleMouseDown(uint32_t x, uint32_t y)
 	}
 	assert(maskStack.empty());
 	if(selected==NULL)
-		return;
+	{
+		selected = sys->getStage();
+	}
 	assert_and_throw(selected->getPrototype()->isSubClass(Class<InteractiveObject>::getClass()));
 	lastMouseDownTarget=selected;
 	//Add event to the event queue
