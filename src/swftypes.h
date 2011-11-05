@@ -31,11 +31,9 @@
 #include <string.h>
 #include <assert.h>
 #include "exceptions.h"
-#ifndef WIN32
- // TODO: Proper CMake check
- #include <arpa/inet.h>
+#ifndef _WIN32
+#	include <arpa/inet.h>
 #endif
-#include <endian.h>
 
 #ifdef BIG_ENDIAN
 #include <algorithm>

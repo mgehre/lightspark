@@ -23,14 +23,17 @@
 // Set BOOST_FILEYSTEM_VERSION to 2 since boost-1.46 defaults to 3
 #define BOOST_FILESYSTEM_VERSION 2
 
-//Define cross platform helpers
-// TODO: This should be reworked to use CMake feature detection where possible
-
-// gettext support
-#include <locale.h>
-#include <libintl.h>
 #include <stddef.h>
 #include <assert.h>
+//We do not use cstdint, because thats not available on msvc
+//but there are replacement stdint.h available for msvc
+#include <stdint.h>
+
+// TODO: This should be reworked to use CMake feature detection where possible
+
+/* gettext support */
+#include <locale.h>
+#include <libintl.h>
 #define _(STRING) gettext(STRING)
 
 #include <glib.h>
@@ -58,7 +61,7 @@
 
 // Current Windows is always little-endian
 #define be64toh(x) _byteswap_uint64(x)
-
+#if 0
 #include <malloc.h>
 inline int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size)
 {
@@ -69,7 +72,7 @@ inline void aligned_free(void *mem)
 {
 	_aligned_free(mem);
 }
-
+#endif
 // Emulate these functions
 int round(double f);
 long lrint(double f);
@@ -115,18 +118,9 @@ int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size);
 void aligned_free(void *mem);
 #endif
 
-//Ensure compatibility on various targets
-#if defined(__FreeBSD__)
-#include <sys/endian.h>
-#elif defined(__APPLE__)
-#define _BSD_SOURCE
-#include <architecture/byte_order.h>
-#elif !defined(WIN32)
-#include <endian.h>
-#endif
-
 #include <iostream>
 
+/* DLL_LOCAL / DLL_PUBLIC */
 #if defined _WIN32 || defined __CYGWIN__
 // No DLLs, for now
 #   define DLL_PUBLIC
@@ -155,15 +149,32 @@ inline T maxTmpl(T a, T b)
 #define dmin minTmpl<double>
 #define dmax maxTmpl<double>
 
-#include <cstdint>
-#include <sys/types.h>
-std::uint64_t compat_msectiming();
+/* timing */
+
+uint64_t compat_msectiming();
 void compat_msleep(unsigned int time);
-std::uint64_t compat_get_current_time_ms();
-std::uint64_t compat_get_current_time_us();
-std::uint64_t compat_get_thread_cputime_us();
+uint64_t compat_get_current_time_ms();
+uint64_t compat_get_current_time_us();
+uint64_t compat_get_thread_cputime_us();
 
 int kill_child(GPid p);
+
+/* byte order */
+#if defined(__FreeBSD__)
+#	include <sys/endian.h>
+#elif defined(__APPLE__)
+#	define _BSD_SOURCE
+#	include <architecture/byte_order.h>
+#elif defined(_WIN32)
+	//windows is always le
+#	define	__LITTLE_ENDIAN	1234
+#	define	__BIG_ENDIAN	4321
+#	define __BYTE_ORDER	__LITTLE_ENDIAN
+#	define be32toh(x) _byteswap_ulong(x)
+#	define be16toh(x) _byteswap_ushort(x)
+#else
+#	include <endian.h>
+#endif
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 
@@ -231,7 +242,7 @@ inline uint64_t BigEndianToHost64(uint64_t x)
 	return x;
 }
 
-#else
+#else //__BYTE_ORDER == __LITTLE_ENDIAN
 inline uint16_t LittleEndianToHost16(uint16_t x)
 {
 	return x;
