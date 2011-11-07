@@ -28,7 +28,7 @@
 //We do not use cstdint, because thats not available on msvc
 //but there are replacement stdint.h available for msvc
 #include <stdint.h>
-
+#include <iostream>
 // TODO: This should be reworked to use CMake feature detection where possible
 
 /* gettext support */
@@ -36,28 +36,23 @@
 #include <libintl.h>
 #define _(STRING) gettext(STRING)
 
+
 #include <glib.h>
 
-#ifdef WIN32
+#ifdef _WIN32
+
 #define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
+//#include <winsock2.h>
 #include <windows.h>
-#include <intrin.h>
+//#include <intrin.h>
+
 #undef min
 #undef max
 #undef RGB
 #undef exception_info // Let's hope MS functions always use _exception_info
-#define snprintf _snprintf
+//#define snprintf _snprintf
 #define isnan _isnan
-
-// WINTODO: Hopefully, the MSVC instrinsics are similar enough
-//          to what the standard mandates
-#ifdef _MSC_VER
-#define ATOMIC_INT32(x) __declspec(align(4)) long x
-#define ATOMIC_INCREMENT(x) InterlockedIncrement(&x)
-#define ATOMIC_DECREMENT(x) InterlockedDecrement(&x)
-
-#define TLSDATA __declspec( thread )
+#undef DOUBLE_CLICK
 
 // Current Windows is always little-endian
 #define be64toh(x) _byteswap_uint64(x)
@@ -83,42 +78,51 @@ long lrint(double f);
 #define DATADIR "."
 #define GNASH_PATH "NONEXISTENT_PATH_GNASH_SUPPORT_DISABLED"
 
-#else
-#error At the moment, only Visual C++ is supported on Windows
-#endif
-
-
 #else //GCC
-#ifndef __STDC_LIMIT_MACROS
-#define __STDC_LIMIT_MACROS
-#endif
+#	ifndef __STDC_LIMIT_MACROS
+#		define __STDC_LIMIT_MACROS
+#	endif
 
-#ifndef __STDC_CONSTANT_MACROS
-#define __STDC_CONSTANT_MACROS
-#endif
+#	ifndef __STDC_CONSTANT_MACROS
+#		define __STDC_CONSTANT_MACROS
+#	endif
 
-#define TLSDATA __thread
-#define CALLBACK
 
-//Support both atomic header ( gcc >= 4.6 ), and earlier ( stdatomic.h )
-#ifdef HAVE_ATOMIC
-#include <atomic>
-#else
-#include <stdatomic.h>
-#endif
-#define ATOMIC_INT32(x) std::atomic<int32_t> x
-#define ATOMIC_INCREMENT(x) x.fetch_add(1)
-#define ATOMIC_DECREMENT(x) (x.fetch_sub(1)-1)
-
-//Boolean type con acquire release barrier semantics
-#define ACQUIRE_RELEASE_FLAG(x) std::atomic_bool x
-#define ACQUIRE_READ(x) x.load(std::memory_order_acquire)
-#define RELEASE_WRITE(x, v) x.store(v, std::memory_order_release)
 int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size);
 void aligned_free(void *mem);
+#endif //if _WIN32
+
+#ifdef _WIN32
+// WINTODO: Hopefully, the MSVC instrinsics are similar enough
+//          to what the standard mandates
+#	define ATOMIC_INT32(x) __declspec(align(4)) volatile long x
+#	define ATOMIC_INCREMENT(x) InterlockedIncrement(&x)
+#	define ATOMIC_DECREMENT(x) InterlockedDecrement(&x)
+#	define ACQUIRE_RELEASE_FLAG(x) ATOMIC_INT32(x)
+#	define ACQUIRE_READ(x) InterlockedCompareExchange(const_cast<long*>(&x),1,1)
+#	define RELEASE_WRITE(x, v) InterlockedExchange(&x,v)
+#	define TLSDATA __declspec( thread )
+#else
+#	define TLSDATA __thread
+#	define CALLBACK
+
+//Support both atomic header ( gcc >= 4.6 ), and earlier ( stdatomic.h )
+#	ifdef HAVE_ATOMIC
+#		include <atomic>
+#	else
+#		include <stdatomic.h>
+#	endif
+
+#	define ATOMIC_INT32(x) std::atomic<int32_t> x
+#	define ATOMIC_INCREMENT(x) x.fetch_add(1)
+#	define ATOMIC_DECREMENT(x) (x.fetch_sub(1)-1)
+
+//Boolean type con acquire release barrier semantics
+#	define ACQUIRE_RELEASE_FLAG(x) std::atomic_bool x
+#	define ACQUIRE_READ(x) x.load(std::memory_order_acquire)
+#	define RELEASE_WRITE(x, v) x.store(v, std::memory_order_release)
 #endif
 
-#include <iostream>
 
 /* DLL_LOCAL / DLL_PUBLIC */
 #if defined _WIN32 || defined __CYGWIN__
@@ -134,6 +138,8 @@ void aligned_free(void *mem);
 	#endif
 #endif
 
+
+/* min/max */
 template<class T>
 inline T minTmpl(T a, T b)
 {

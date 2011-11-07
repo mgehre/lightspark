@@ -644,8 +644,9 @@ struct nsNameAndKind
 	}
 };
 
-struct multiname
+class multiname
 {
+public:
 	enum NAME_TYPE {NAME_STRING,NAME_INT,NAME_NUMBER,NAME_OBJECT};
 	NAME_TYPE name_type;
 	tiny_string name_s;
@@ -720,7 +721,7 @@ class RGB
 public:
 	RGB(){};
 	RGB(int r,int g, int b):Red(r),Green(g),Blue(b){};
-	RGB(uint color):Red((color>>16)&0xFF),Green((color>>8)&0xFF),Blue(color&0xFF){}
+	RGB(uint32_t color):Red((color>>16)&0xFF),Green((color>>8)&0xFF),Blue(color&0xFF){}
 	UI8 Red;
 	UI8 Green;
 	UI8 Blue;
@@ -732,7 +733,7 @@ class RGBA
 public:
 	RGBA():Red(0),Green(0),Blue(0),Alpha(255){}
 	RGBA(int r, int g, int b, int a):Red(r),Green(g),Blue(b),Alpha(a){}
-	RGBA(uint color, int a):Red((color>>16)&0xFF),Green((color>>8)&0xFF),Blue(color&0xFF),Alpha(a){}
+	RGBA(uint32_t color, int a):Red((color>>16)&0xFF),Green((color>>8)&0xFF),Blue(color&0xFF),Alpha(a){}
 	UI8 Red;
 	UI8 Green;
 	UI8 Blue;

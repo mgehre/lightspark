@@ -20,7 +20,13 @@
 #ifndef ENGINEUTILS_H
 #define ENGINEUTILS_H
 
-#include <X11/Xlib.h>
+#ifdef _WIN32
+typedef void* Display;
+typedef void* VisualID;
+typedef void* Window;
+#else
+#	include <X11/Xlib.h>
+#endif
 #include <gtk/gtk.h>
 
 namespace lightspark
