@@ -20,8 +20,10 @@
 
 #ifndef _AMF3_GENERATOR_H
 
+#include "compat.h"
 #include <string>
 #include <vector>
+
 namespace lightspark
 {
 

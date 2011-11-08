@@ -47,7 +47,12 @@ extern "C" {
 }
 #endif
 
-#include <gdk/gdkx.h>
+
+#ifdef _WIN32
+#	include <gdk/gdkwin32.h>
+#else
+#	include <gdk/gdkx.h>
+#endif
 
 using namespace std;
 using namespace lightspark;
@@ -564,8 +569,12 @@ void SystemState::delayedCreation(SystemState* th)
 		gtk_widget_set_can_focus(plug, true);
 		gtk_widget_grab_focus(plug);
 	}
+#ifdef _WIN32
+	d->window=GDK_WINDOW_HWND(gtk_widget_get_window(plug));
+#else
 	d->window=GDK_WINDOW_XID(gtk_widget_get_window(plug));
 	XSync(d->display, False);
+#endif
 	//The lock is needed to avoid thread creation/destruction races
 	Locker l(th->mutex);
 	if(th->shutdown)
@@ -1191,7 +1200,7 @@ void ParseThread::setRootMovie(RootMovieClip *root)
 RootMovieClip *ParseThread::getRootMovie()
 {
 	objectSpinlock.lock();
-	RootMovieClip *root=Class<RootMovieClip>::dyncast(parsedObject.getPtr());
+	RootMovieClip *root=dynamic_cast<RootMovieClip*>(parsedObject.getPtr());
 	objectSpinlock.unlock();
 	if(root)
 		return root;
@@ -1254,7 +1263,7 @@ void RootMovieClip::commitFrame(bool another)
 	setFramesLoaded(frames.size());
 
 	if(another)
-		frames.emplace_back();
+		frames.push_back(Frame());
 
 	if(getFramesLoaded()==1 && frameRate!=0)
 	{

@@ -197,7 +197,7 @@ inline stack_entry make_stack_entry(llvm::Value* v, STACK_TYPE t)
 	return std::make_pair(v, t);
 }
 
-class method_body_info;
+struct method_body_info;
 
 class method_info
 {

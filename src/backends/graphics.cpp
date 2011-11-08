@@ -549,9 +549,15 @@ bool CairoTokenRenderer::cairoPathFromTokens(cairo_t* cr, const std::vector<Geom
 	cairo_set_operator(stroke_cr, CAIRO_OPERATOR_DEST);
 	cairo_set_operator(cr, CAIRO_OPERATOR_DEST);
 
+#ifdef _WIN32
+	#define PATH(operation, ...) \
+		operation(cr, __VA_ARGS__); \
+		operation(stroke_cr, __VA_ARGS__);
+#else
 	#define PATH(operation, args...) \
 		operation(cr, ## args); \
 		operation(stroke_cr, ## args);
+#endif
 
 	for(uint32_t i=0;i<tokens.size();i++)
 	{
@@ -804,7 +810,7 @@ uint8_t* CairoRenderer::convertBitmapWithAlphaToCairo(uint8_t* inData, uint32_t 
 		for(uint32_t j = 0; j < width; j++)
 		{
 			uint32_t* outDataPos = (uint32_t*)(outData+i*stride) + j;
-			*outDataPos = BigEndianToHost32( *(inData32+(i*width+j)) );
+			*outDataPos = GINT32_FROM_BE( *(inData32+(i*width+j)) );
 		}
 	}
 	return outData;
@@ -825,7 +831,7 @@ uint8_t* CairoRenderer::convertBitmapToCairo(uint8_t* inData, uint32_t width, ui
 			/* copy the RGB bytes to rgbData */
 			memcpy(rgbData, inData+(i*width+j)*3, 3);
 			/* cairo needs this in host endianess */
-			*outDataPos = BigEndianToHost32(pdata);
+			*outDataPos = GINT32_FROM_BE(pdata);
 		}
 	}
 	return outData;

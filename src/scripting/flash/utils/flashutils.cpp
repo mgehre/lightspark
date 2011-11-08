@@ -1212,7 +1212,7 @@ ASFUNCTIONBODY(lightspark,setInterval)
 	assert_and_throw(argslen >= 2 && args[0]->getObjectType()==T_FUNCTION);
 
 	//Build arguments array
-	ASObject* callbackArgs[argslen-2];
+	ASObject** callbackArgs = g_newa(ASObject*,argslen-2);
 	uint32_t i;
 	for(i=0; i<argslen-2; i++)
 	{
@@ -1234,7 +1234,7 @@ ASFUNCTIONBODY(lightspark,setTimeout)
 	assert_and_throw(argslen >= 2);
 
 	//Build arguments array
-	ASObject* callbackArgs[argslen-2];
+	ASObject** callbackArgs = g_newa(ASObject*,argslen-2);
 	uint32_t i;
 	for(i=0; i<argslen-2; i++)
 	{

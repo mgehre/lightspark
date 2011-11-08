@@ -28,11 +28,17 @@
 #include <ctype.h>
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 #ifdef ENABLE_CURL
 #include <curl/curl.h>
 #endif
 
+#ifdef _WIN32
+#include <io.h>
+#endif
+
 using namespace lightspark;
+using namespace std;
 
 /**
  * \brief Download manager constructor
@@ -769,12 +775,12 @@ void Downloader::openCache()
 	{
 		//Create a temporary file(name)
 		std::string cacheFilenameS = sys->config->getCacheDirectory() + "/" + sys->config->getCachePrefix() + "XXXXXX";
-		char cacheFilenameC[cacheFilenameS.length()+1];
+		char* cacheFilenameC = (char*)alloca(cacheFilenameS.length()+1);
 		strncpy(cacheFilenameC, cacheFilenameS.c_str(), cacheFilenameS.length());
 		cacheFilenameC[cacheFilenameS.length()] = '\0';
 		//char cacheFilenameC[30] = "/tmp/lightsparkdownloadXXXXXX";
 		//strcpy(cacheFilenameC, "/tmp/lightsparkdownloadXXXXXX");
-		int fd = mkstemp(cacheFilenameC);
+		int fd = g_mkstemp(cacheFilenameC);
 		if(fd == -1)
 			throw RunTimeException(_("Downloader::openCache: cannot create temporary file"));
 		//We are using fstream to read/write to the cache, so we don't need this FD

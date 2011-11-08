@@ -225,9 +225,11 @@ void* RenderThread::worker(RenderThread* th)
 
 	th->windowWidth=e->width;
 	th->windowHeight=e->height;
-	
+#ifndef _WIN32
 	Display* d=XOpenDisplay(NULL);
+#endif
 
+#ifndef _WIN32
 #ifndef ENABLE_GLES2
 	int a,b;
 	Bool glx_present=glXQueryVersion(d,&a,&b);
@@ -346,6 +348,7 @@ void* RenderThread::worker(RenderThread* th)
 	}
 	eglMakeCurrent(ed, win, win, th->mEGLContext);
 #endif
+#endif
 
 	th->commonGLInit(th->windowWidth, th->windowHeight);
 	th->commonGLResize();
@@ -396,7 +399,11 @@ void* RenderThread::worker(RenderThread* th)
 			{
 				th->renderErrorPage(th, th->m_sys->standalone);
 #ifndef ENABLE_GLES2
+#ifdef _WIN32
+				//SwapBuffers(hDCWin);
+#else
 				glXSwapBuffers(d,glxWin);
+#endif
 #else
 				eglSwapBuffers(ed, win);
 #endif
@@ -404,7 +411,11 @@ void* RenderThread::worker(RenderThread* th)
 			else
 			{
 #ifndef ENABLE_GLES2
+#ifdef _WIN32
+				//SwapBuffers(hDCWin);
+#else
 				glXSwapBuffers(d,glxWin);
+#endif
 #else
 				eglSwapBuffers(ed, win);
 #endif
@@ -424,13 +435,18 @@ void* RenderThread::worker(RenderThread* th)
 	glDisable(GL_TEXTURE_2D);
 	th->commonGLDeinit();
 #ifndef ENABLE_GLES2
+#ifdef _WIN32
+#else
 	glXMakeCurrent(d,None,NULL);
 	glXDestroyContext(d,th->mContext);
+#endif
 #else
 	eglMakeCurrent(ed, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	eglDestroyContext(ed, th->mEGLContext);
 #endif
+#ifndef _WIN32
 	XCloseDisplay(d);
+#endif
 	return NULL;
 }
 

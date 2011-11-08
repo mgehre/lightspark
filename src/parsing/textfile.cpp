@@ -82,7 +82,7 @@ char *dataFileRead(const char *fn)
 		".",
 		"..",
 		"src",
-		DATADIR,
+		LS_DATADIR,
 		"/usr/share/lightspark",
 	};
 	for(uint32_t i=0;i<sizeof(paths)/sizeof(const char*);i++)

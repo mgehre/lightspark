@@ -51,23 +51,16 @@
 #undef RGB
 #undef exception_info // Let's hope MS functions always use _exception_info
 //#define snprintf _snprintf
-#define isnan _isnan
+namespace std
+{
+	inline double copysign(double x, double y) { return _copysign(x, y); }
+	inline bool isnan(double d) { return _isnan(d); }
+}
 #undef DOUBLE_CLICK
 
 // Current Windows is always little-endian
 #define be64toh(x) _byteswap_uint64(x)
-#if 0
-#include <malloc.h>
-inline int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size)
-{
-	*memptr = _aligned_malloc(size, alignment);
-	return (*memptr != NULL) ? 0: -1;
-}
-inline void aligned_free(void *mem)
-{
-	_aligned_free(mem);
-}
-#endif
+
 // Emulate these functions
 int round(double f);
 long lrint(double f);
@@ -75,8 +68,8 @@ long lrint(double f);
 
 // WINTODO: Should be set by CMake?
 #define PATH_MAX 260
-#define DATADIR "."
-#define GNASH_PATH "NONEXISTENT_PATH_GNASH_SUPPORT_DISABLED"
+//#define LS_DATADIR "."
+//#define GNASH_PATH "NONEXISTENT_PATH_GNASH_SUPPORT_DISABLED"
 
 #else //GCC
 #	ifndef __STDC_LIMIT_MACROS
@@ -86,11 +79,24 @@ long lrint(double f);
 #	ifndef __STDC_CONSTANT_MACROS
 #		define __STDC_CONSTANT_MACROS
 #	endif
-
-
-int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size);
-void aligned_free(void *mem);
 #endif //if _WIN32
+
+/* aligned_malloc */
+#ifdef _WIN32
+#	include <malloc.h>
+	inline int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size)
+	{
+		*memptr = _aligned_malloc(size, alignment);
+		return (*memptr != NULL) ? 0: -1;
+	}
+	inline void aligned_free(void *mem)
+	{
+		_aligned_free(mem);
+	}
+#else
+	int aligned_malloc(void **memptr, std::size_t alignment, std::size_t size);
+	void aligned_free(void *mem);
+#endif
 
 #ifdef _WIN32
 // WINTODO: Hopefully, the MSVC instrinsics are similar enough
@@ -126,8 +132,7 @@ void aligned_free(void *mem);
 
 /* DLL_LOCAL / DLL_PUBLIC */
 #if defined _WIN32 || defined __CYGWIN__
-// No DLLs, for now
-#   define DLL_PUBLIC
+#   define DLL_PUBLIC __declspec(dllexport)
 #	define DLL_LOCAL
 #else
 	#if __GNUC__ >= 4
@@ -137,7 +142,6 @@ void aligned_free(void *mem);
 		#error GCC version less than 4
 	#endif
 #endif
-
 
 /* min/max */
 template<class T>
@@ -165,33 +169,14 @@ uint64_t compat_get_thread_cputime_us();
 
 int kill_child(GPid p);
 
+#include <glib/gtypes.h>
+
 /* byte order */
-#if defined(__FreeBSD__)
-#	include <sys/endian.h>
-#elif defined(__APPLE__)
-#	define _BSD_SOURCE
-#	include <architecture/byte_order.h>
-#elif defined(_WIN32)
-	//windows is always le
-#	define	__LITTLE_ENDIAN	1234
-#	define	__BIG_ENDIAN	4321
-#	define __BYTE_ORDER	__LITTLE_ENDIAN
-#	define be32toh(x) _byteswap_ulong(x)
-#	define be16toh(x) _byteswap_ushort(x)
-#else
-#	include <endian.h>
-#endif
-
-#if __BYTE_ORDER == __BIG_ENDIAN
-
-inline uint16_t LittleEndianToHost16(uint16_t x)
-{
-	return le16toh(x);
-}
+#if G_BYTE_ORDER == G_BIG_ENDIAN
 
 inline uint32_t LittleEndianToSignedHost24(uint32_t x)
 {
-	uint32_t ret=le32toh(x);
+	uint32_t ret=GINT32_FROM_LE(x);
 	assert(ret<0x1000000);
 	//Sign extend
 	if(ret&0x800000)
@@ -202,23 +187,8 @@ inline uint32_t LittleEndianToSignedHost24(uint32_t x)
 inline uint32_t LittleEndianToUnsignedHost24(uint32_t x)
 {
 	assert(x<0x1000000);
-	uint32_t ret=le32toh(x);
+	uint32_t ret=GINT32_FROM_LE(x);
 	return ret;
-}
-
-inline uint32_t LittleEndianToHost32(uint32_t x)
-{
-	return le32toh(x);
-}
-
-inline uint64_t LittleEndianToHost64(uint64_t x)
-{
-	return le64toh(x);
-}
-
-inline uint16_t BigEndianToHost16(uint16_t x)
-{
-	return x;
 }
 
 inline uint32_t BigEndianToSignedHost24(uint32_t x)
@@ -238,22 +208,8 @@ inline uint32_t BigEndianToUnsignedHost24(uint32_t x)
 	return x;
 }
 
-inline uint32_t BigEndianToHost32(uint32_t x)
-{
-	return x;
-}
-
-inline uint64_t BigEndianToHost64(uint64_t x)
-{
-	return x;
-}
 
 #else //__BYTE_ORDER == __LITTLE_ENDIAN
-inline uint16_t LittleEndianToHost16(uint16_t x)
-{
-	return x;
-}
-
 inline uint32_t LittleEndianToSignedHost24(uint32_t x)
 {
 	assert(x<0x1000000);
@@ -268,26 +224,11 @@ inline uint32_t LittleEndianToUnsignedHost24(uint32_t x)
 	return x;
 }
 
-inline uint32_t LittleEndianToHost32(uint32_t x)
-{
-	return x;
-}
-
-inline uint64_t LittleEndianToHost64(uint64_t x)
-{
-	return x;
-}
-
-inline uint16_t BigEndianToHost16(uint16_t x)
-{
-	return be16toh(x);
-}
-
 inline uint32_t BigEndianToSignedHost24(uint32_t x)
 {
 	assert(x<0x1000000);
 	//Discard the lowest byte, as it was the highest
-	uint32_t ret=be32toh(x)>>8;
+	uint32_t ret=GINT32_FROM_BE(x)>>8;
 	//Sign extend
 	if(ret&0x800000)
 		ret|=0xff000000;
@@ -298,20 +239,9 @@ inline uint32_t BigEndianToUnsignedHost24(uint32_t x)
 {
 	assert(x<0x1000000);
 	//Discard the lowest byte, as it was the highest
-	uint32_t ret=be32toh(x)>>8;
+	uint32_t ret=GINT32_FROM_BE(x)>>8;
 	return ret;
 }
-
-inline uint32_t BigEndianToHost32(uint32_t x)
-{
-	return be32toh(x);
-}
-
-inline uint64_t BigEndianToHost64(uint64_t x)
-{
-	return be64toh(x);
-}
-
 #endif // __BYTE_ORDER == __BIG_ENDIAN
 
 #endif
