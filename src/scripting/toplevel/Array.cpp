@@ -316,10 +316,10 @@ ASFUNCTIONBODY(Array,lastIndexOf)
 
 	size_t i = th->data.size()-1;
 
-	if(argslen == 2 && isnan(args[1]->toNumber()))
+	if(argslen == 2 && std::isnan(args[1]->toNumber()))
 		return abstract_i(0);
 
-	if(argslen == 2 && args[1]->getObjectType() != T_UNDEFINED && !isnan(args[1]->toNumber()))
+	if(argslen == 2 && args[1]->getObjectType() != T_UNDEFINED && !std::isnan(args[1]->toNumber()))
 	{
 		int j = args[1]->toInt(); //Preserve sign
 		if(j < 0) //Negative offset, use it as offset from the end of the array
