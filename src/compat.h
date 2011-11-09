@@ -25,9 +25,7 @@
 
 #include <stddef.h>
 #include <assert.h>
-//We do not use cstdint, because thats not available on msvc
-//but there are replacement stdint.h available for msvc
-#include <stdint.h>
+#include <cstdint>
 #include <iostream>
 // TODO: This should be reworked to use CMake feature detection where possible
 
@@ -45,12 +43,14 @@
 //#include <winsock2.h>
 #include <windows.h>
 //#include <intrin.h>
+#include <io.h>
 
 #undef min
 #undef max
 #undef RGB
 #undef exception_info // Let's hope MS functions always use _exception_info
 #define strncasecmp _strnicmp
+#define close _close
 //#define snprintf _snprintf
 /* those are C++11 but not available in Visual Studio 2010 */
 namespace std

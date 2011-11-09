@@ -376,7 +376,6 @@ void SystemState::destroy()
 	//Kill our child process if any
 	if(childPid)
 	{
-		assert(childPid!=getpid());
 		kill_child(childPid);
 	}
 	//Delete the temporary cookies file
@@ -618,7 +617,7 @@ void SystemState::createEngines()
 		LOG(LOG_INFO,_("Trying to invoke gnash!"));
 		//Dump the cookies to a temporary file
 		strcpy(cookiesFileName,"/tmp/lightsparkcookiesXXXXXX");
-		int file=mkstemp(cookiesFileName);
+		int file=g_mkstemp(cookiesFileName);
 		if(file!=-1)
 		{
 			std::string data("Set-Cookie: " + rawCookies);
@@ -636,7 +635,7 @@ void SystemState::createEngines()
 				written += res;
 			} while(written < data.size());
 			close(file);
-			setenv("GNASH_COOKIES_IN", cookiesFileName, 1);
+			g_setenv("GNASH_COOKIES_IN", cookiesFileName, 1);
 		}
 		else
 			cookiesFileName[0]=0;
