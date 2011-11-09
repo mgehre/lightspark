@@ -50,11 +50,16 @@
 #undef max
 #undef RGB
 #undef exception_info // Let's hope MS functions always use _exception_info
+#define strncasecmp _strnicmp
 //#define snprintf _snprintf
+/* those are C++11 but not available in Visual Studio 2010 */
 namespace std
 {
 	inline double copysign(double x, double y) { return _copysign(x, y); }
-	inline bool isnan(double d) { return _isnan(d); }
+	inline bool isnan(double d) { return (bool)_isnan(d); }
+	inline int signbit(double arg) { return (int)copysign(1,arg); }
+	inline bool isfinite(double d) { return (bool)_finite(d); }
+	inline bool isinf(double d) { return !isfinite(d) && !isnan(d); }
 }
 #undef DOUBLE_CLICK
 
@@ -132,15 +137,24 @@ long lrint(double f);
 
 /* DLL_LOCAL / DLL_PUBLIC */
 #if defined _WIN32 || defined __CYGWIN__
-#   define DLL_PUBLIC __declspec(dllexport)
+/*
+#	ifdef BUILDING_DLL
+#   	define DLL_PUBLIC __declspec(dllexport)
+#	else
+#   	define DLL_PUBLIC __declspec(dllimport)
+#endif
+*/
+/* static linking on WIN32 */
+# 	define DLL_PUBLIC
 #	define DLL_LOCAL
 #else
-	#if __GNUC__ >= 4
-		#define DLL_PUBLIC __attribute__ ((visibility("default")))
-		#define DLL_LOCAL  __attribute__ ((visibility("hidden")))
-	#else
-		#error GCC version less than 4
-	#endif
+#	if __GNUC__ >= 4
+#		define DLL_PUBLIC __attribute__ ((visibility("default")))
+#		define DLL_LOCAL  __attribute__ ((visibility("hidden")))
+#	else
+#		define DLL_PUBLIC
+#		define DLL_LOCAL
+#	endif
 #endif
 
 /* min/max */

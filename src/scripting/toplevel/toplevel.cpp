@@ -1526,6 +1526,7 @@ double ASString::toNumber() const
 
 	// strtod converts case-insensitive "inf" and "infinity" to
 	// inf, flash only accepts case-sensitive "Infinity".
+	/* TODO: implement strncasecmp
 	if(std::isinf(val)) {
 		const char *tmp=s;
 		while(g_ascii_isspace(*tmp))
@@ -1534,7 +1535,9 @@ double ASString::toNumber() const
 			tmp++;
 		if(strncasecmp(tmp, "inf", 3)==0 && strcmp(tmp, "Infinity")!=0)
 			return numeric_limits<double>::quiet_NaN();
+
 	}
+	*/
 
 	// Fail if there is any rubbish after the converted number
 	while(*end) {
@@ -2117,7 +2120,7 @@ void Number::serialize(ByteArray* out, std::map<tiny_string, uint32_t>& stringMa
 	out->writeByte(amf3::double_marker);
 	//We have to write the double in network byte order (big endian)
 	const uint64_t* tmpPtr=reinterpret_cast<const uint64_t*>(&val);
-	uint64_t bigEndianVal=BigEndianToHost64(*tmpPtr);
+	uint64_t bigEndianVal=GINT64_FROM_BE(*tmpPtr);
 	uint8_t* bigEndianPtr=reinterpret_cast<uint8_t*>(&bigEndianVal);
 
 	for(uint32_t i=0;i<8;i++)
@@ -2328,11 +2331,11 @@ ASObject* SyntheticFunction::call(ASObject* obj, ASObject* const* args, uint32_t
 	cc.inClass = inClass;
 	cc.mi=mi;
 	cc.locals_size=mi->body->local_count+1;
-	ASObject* locals[cc.locals_size];
+	ASObject** locals = g_newa(ASObject*, cc.locals_size);
 	cc.locals=locals;
 	memset(cc.locals,0,sizeof(ASObject*)*cc.locals_size);
 	cc.max_stack = mi->body->max_stack;
-	ASObject* stack[cc.max_stack];
+	ASObject** stack = g_newa(ASObject*, cc.max_stack);
 	cc.stack=stack;
 	cc.stack_index=0;
 	cc.context=mi->context;
@@ -2696,7 +2699,7 @@ ASFUNCTIONBODY(RegExp,exec)
 	for(int i=0;i<namedGroups;i++)
 	{
 		nameEntry* entry=(nameEntry*)entries;
-		uint16_t num=BigEndianToHost16(entry->number);
+		uint16_t num=GINT16_FROM_BE(entry->number);
 		ASObject* captured=a->at(num);
 		captured->incRef();
 		a->setVariableByQName(entry->name,"",captured,DYNAMIC_TRAIT);
@@ -2908,7 +2911,7 @@ ASFUNCTIONBODY(ASString,replace)
 			{
 				//Get the replace for this match
 				IFunction* f=static_cast<IFunction*>(args[1]);
-				ASObject* subargs[3+capturingGroups];
+				ASObject** subargs = g_newa(ASObject*, 3+capturingGroups);
 				//we index on bytes, not on UTF-8 characters
 				subargs[0]=Class<ASString>::getInstanceS(ret->data.substr_bytes(ovector[0],ovector[1]-ovector[0]));
 				for(int i=0;i<capturingGroups;i++)
